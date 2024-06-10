@@ -3,7 +3,10 @@ import torch.nn as nn
 
 
 class Song2Face(nn.Module):
-    """https://research.nvidia.com/sites/default/files/publications/karras2017siggraph-paper_0.pdf"""
+    """
+    Song2Face: Synthesizing Singing Facial Animation from Audio
+    https://dl.acm.org/doi/10.1145/3410700.3425435.
+    """
 
     def __init__(self, n_verts: int, n_onehot: int):
         super().__init__()
