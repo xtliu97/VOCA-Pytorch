@@ -36,6 +36,16 @@ class ExpConfig(BaseModel):
     lr: float
     # loss
     loss: Optional[str] = None
+    is_transformer: bool = False
+
+    def fit_transformer(self) -> "ExpConfig":
+        if self.modelname == "faceformer":
+            self.split_frame = False
+            self.batch_size = 1
+            self.feature_extractor = None
+            self.is_transformer = True
+
+        return self
 
     @classmethod
     def from_yaml(cls, path: str):
@@ -43,7 +53,7 @@ class ExpConfig(BaseModel):
             config = yaml.safe_load(f)
         return cls(**config)
 
-    def name(self):
+    def exp_name(self):
         return f"{self.modelname}_{self.feature_extractor}_{self.lr}_{self.loss}_{self.percision}"
 
 
@@ -62,7 +72,7 @@ def get_extractor(extractor: Literal["mfcc", "wav2vec"]):
     extractor_map = {
         "mfcc": MFCCExtractor,
         "wav2vec": Wav2VecExtractor,
-        None: lambda *args, **kwargs: None  # noqa
+        None: lambda *args, **kwargs: None,  # noqa
     }
     return extractor_map[extractor]
 
@@ -74,9 +84,7 @@ def get_loss_fn(modelname: str):
 
 
 class Audio2FaceModel(L.LightningModule):
-    def __init__(
-        self, config: ExpConfig
-    ):
+    def __init__(self, config: ExpConfig):
         super().__init__()
         self.model_name = config.modelname
         model = get_model(config.modelname)
@@ -127,18 +135,14 @@ class Audio2FaceModel(L.LightningModule):
     def on_train_epoch_end(self):
         epoch_err = sum(self.training_error) / len(self.training_error)
         self.log("train/err", epoch_err, on_epoch=True, on_step=False)
-        self.logger.experiment.add_scalar(
-            "train_epock/err", epoch_err, self.current_epoch
-        )
+        self.logger.experiment.add_scalar("train_epock/err", epoch_err, self.current_epoch)
         print(f"Epoch {self.current_epoch} train err: {epoch_err}")
         self.training_error.clear()
 
     def on_validation_epoch_end(self):
         epoch_err = sum(self.validation_error) / len(self.validation_error)
         self.log("val/err", epoch_err, on_epoch=True, on_step=False)
-        self.logger.experiment.add_scalar(
-            "val_epock/err", epoch_err, self.current_epoch
-        )
+        self.logger.experiment.add_scalar("val_epock/err", epoch_err, self.current_epoch)
         print(f"Epoch {self.current_epoch} val error: {epoch_err}")
         self.validation_error.clear()
 
@@ -174,12 +178,8 @@ class Audio2FaceModel(L.LightningModule):
     def on_validation_end(self):
         return
         if self.model_name == "faceformer":
-            self.validation_pred_verts = [
-                item.squeeze(0) for item in self.validation_pred_verts
-            ]
-            self.validation_gt_verts = [
-                item.squeeze(0) for item in self.validation_gt_verts
-            ]
+            self.validation_pred_verts = [item.squeeze(0) for item in self.validation_pred_verts]
+            self.validation_gt_verts = [item.squeeze(0) for item in self.validation_gt_verts]
 
         predicted_verts = torch.cat(self.validation_pred_verts, axis=0)
         gt_verts = torch.cat(self.validation_gt_verts, axis=0)
@@ -190,26 +190,18 @@ class Audio2FaceModel(L.LightningModule):
         random_idx = torch.randint(0, predicted_verts.shape[0], (1,))
         try:
             renderer = self.get_renderer()
-            rendered_image = renderer.render(predicted_verts[random_idx].cpu().numpy())[
-                0
-            ]
+            rendered_image = renderer.render(predicted_verts[random_idx].cpu().numpy())[0]
             gt_image = renderer.render(gt_verts[random_idx].cpu().numpy())[0]
         except Exception as e:
             print("Failed to render image", e)
             return
 
         if self.logger:
-            self.logger.experiment.add_image(
-                "val/prediction", rendered_image.transpose(2, 0, 1), self.current_epoch
-            )
-            self.logger.experiment.add_image(
-                "val/gt", gt_image.transpose(2, 0, 1), self.current_epoch
-            )
+            self.logger.experiment.add_image("val/prediction", rendered_image.transpose(2, 0, 1), self.current_epoch)
+            self.logger.experiment.add_image("val/gt", gt_image.transpose(2, 0, 1), self.current_epoch)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(
-            self.parameters(), lr=self.lr, weight_decay=self.lr_weight_decay
-        )
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.lr_weight_decay)
         return optimizer
 
     def predict_step(self, batch, batch_idx, dataloader_idx=None):
