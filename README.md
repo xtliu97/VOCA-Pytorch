@@ -1,15 +1,21 @@
 # audio2face-pytorch
 
-This repository provides a PyTorch implementation for audio driven face meshes or blendshape models.  
+This repository provides PyTorch implementations for audio driven face meshes or blendshape models.  
 Currently, it supports the following models:
 
 - Audio2Face
 - VOCA
 - FaceFormer
 
+And the following feature extractors are available:
+
+- Wav2Vec
+- MFCCExtractor
+
 ## Dataset
 
-This repository uses VOCASET as the template, which is introduced in 'Capture, Learning, and Synthesis of 3D Speaking Styles' (CVPR 2019). Additionally, `FLAME_sample` has been extracted and converted to `assets/FLAME_sample.obj` and the Renderer has been redesigned. As a result, the `psbody` library is not required in this repository, which may cause installation issues for Apple Silicon users.
+This repository uses VOCASET as the template, which is introduced in 'Capture, Learning, and Synthesis of 3D Speaking Styles' (CVPR 2019).  
+Additionally, `FLAME_sample` has been extracted and converted to `assets/FLAME_sample.obj` and the Renderer has been redesigned. As a result, the `psbody` library is not required in this repository, which may cause installation issues for Apple Silicon users.
 
 ## License
 
