@@ -6,3 +6,5 @@ opencv-python
 pyrender
 tensorboard
 numpy
+torchaudio
+transformers
