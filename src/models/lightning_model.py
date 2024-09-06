@@ -11,7 +11,6 @@ from .voca import Voca
 from .audio2face import Audio2Mesh
 from .song2face import Song2Face
 from .faceformer import Faceformer
-from .af_model import AFModel
 from .extractor import MFCCExtractor, Wav2VecExtractor
 
 from ..utils.renderer import Renderer, FaceMesh, images_to_video, save_audio
@@ -63,7 +62,7 @@ def get_model(modelname: Literal["voca", "audio2mesh", "song2face", "faceformer"
         "audio2mesh": Audio2Mesh,
         "song2face": Song2Face,
         "faceformer": Faceformer,
-        "af_model": AFModel,
+        # "af_model": AFModel,
     }
     return model_map[modelname]
 
